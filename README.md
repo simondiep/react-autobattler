@@ -2,8 +2,9 @@
 
 Generated auto-battler game using bolt.new
 
-## Original prompt
+## Prompts
 
+### Day 1
 - Create a js autobattler, themed around monsters.
 - Be able to choose between three starting monsters.
 - Monsters each have a special passive ability, attributes, two active abilities, and an ultimate.
@@ -20,6 +21,7 @@ Generated auto-battler game using bolt.new
 - Be able to preview a monster's skills and passives and ultimate on click.
 - When you win or lose, be able to see the results, and click a button to continue.
 
+### Day 2
 - On hover of each attribute, show a tooltip explaining what the attribute does.
 - When the battle is over, show stats for each team, such as how much total damage each monster did and took.
 - Allow minimizing/maximizing the end of battle modal.
@@ -52,7 +54,7 @@ Generated auto-battler game using bolt.new
 - The Shop that shows monsters, should only show 6 monsters at a time (randomly picked after each battle).
 - Provide more clear labels that the team formation affects who is targeted more, and also show the targeted percentage, maybe call it aggro.
 
-## On Deck
+### On Deck
 
 - Allow buying multiples of the same monster
 - Provide the option to merge two of the same monster to get increased attributes.  The purchased attributes should be included. Indicate the number of merged monsters with stars.
