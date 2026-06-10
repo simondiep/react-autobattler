@@ -60,3 +60,14 @@ Generated auto-battler game using bolt.new
 - The HP attribute upgrade should provide 25 HP
 - The attribute tooltips are not showing
 - After each battle victory, provide the choice to recruit one of the enemies defeated.
+- The Return to Team button should not overlap the minimize modal button
+- The battle log should color code each log entry to differentiate your team vs the enemy team actions
+- The battle log timestamps are wrong. The timestamps are all the same, and aren't reset from previous battles.
+- For each battle log entry, the monster performing the action should always be mentioned first.  Then the action name. Then the targets. For damaging moves, list the damage dealt to each target.
+- The battle summary modal should show both teams' stats, layed out like how the battle screen is, with top and bottom rows.
+- The battle summary stats are wrong. Sometimes 0s are shown when they should not be 0.
+- Rename the Reset Button to "Reset All Progress and Start Over"
+- Add a tooltip to the Trash icon next to each monster
+- The "Monsters in Reserve" section seems redundant with the "Available monsters" section. Remove the "Monsters in Reserve" section and just indicate you have monsters in reserve.
+- The aggro label should not be overlapping other text
+- On the monster summary modal, make it wider, and show the attributes to the left and abilities to the right
