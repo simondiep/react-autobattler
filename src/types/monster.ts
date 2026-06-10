@@ -19,7 +19,8 @@ export interface Ability {
   cooldown: number; // seconds
   initialDelay: number; // seconds before first cast
   targetCount: number; // 0 = all enemies, 1 = single, 2+ = multi
-  execute: (self: BattleMonster, targets: BattleMonster[], battle: BattleState) => AbilityResult;
+  targetAllies?: boolean; // if true, targets allies instead of enemies
+  execute: (self: BattleMonster, targets: BattleMonster[], battle: BattleState, timestamp: number) => AbilityResult;
 }
 
 export interface Ultimate {
@@ -28,7 +29,8 @@ export interface Ultimate {
   description: string;
   meterMax: number;
   targetCount: number;
-  execute: (self: BattleMonster, targets: BattleMonster[], battle: BattleState) => AbilityResult;
+  targetAllies?: boolean; // if true, targets allies instead of enemies
+  execute: (self: BattleMonster, targets: BattleMonster[], battle: BattleState, timestamp: number) => AbilityResult;
 }
 
 export interface PassiveAbility {
@@ -66,8 +68,14 @@ export interface BattleMonster {
   isAlive: boolean;
   team: 'player' | 'enemy';
   lastAttackTime: number;
+  // Battle stats
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  totalHealing: number;
+  kills: number;
   // Dynamic properties used by abilities
   stunned?: boolean;
+  stunnedUntil?: number;
   shield?: number;
   hasShieldBonus?: boolean;
   hasRevived?: boolean;
@@ -78,6 +86,24 @@ export interface BattleMonster {
   damageImmune?: boolean;
   reflectDamage?: number;
   hydraResurrection?: boolean;
+  // Buff tracking properties
+  _infernoBuff?: number;
+  _veilBoost?: number;
+  _armorBoost?: number;
+  _dissolveReduction?: number;
+  _infernoDebuff?: number;
+  _cloneBoost?: number;
+  _stormAttackReduction?: number;
+  dragonHits?: number;
+  maxFury?: number;
+  furyStacks?: number;
+  _resurrected?: boolean;
+  _rezBoost?: number;
+  _curseDefReduction?: number;
+  _aegisBoost?: number;
+  shadowCount?: number;
+  _voidReduction?: number;
+  hitCounter?: number;
 }
 
 export interface AbilityResult {
@@ -98,8 +124,9 @@ export interface BattleState {
 
 export interface GameState {
   gold: number;
-  team: string[]; // monster template ids
+  team: string[]; // monster template ids (can have duplicates)
   unlockedMonsters: string[];
   upgrades: Record<string, Partial<MonsterAttributes>>;
   battleCount: number;
+  totalLosses: number;
 }

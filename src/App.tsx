@@ -13,7 +13,7 @@ import {
   updateCooldowns,
   createBattle,
 } from './engine/BattleEngine';
-import { Sword, Shield, Heart, Zap, Coins, ShoppingBag, Users, ChevronUp, Trash2, RefreshCw, Play, Skull, X, Sparkles, Target, Timer, TrendingUp, Award } from 'lucide-react';
+import { Sword, Shield, Heart, Zap, Coins, ShoppingBag, Users, ChevronUp, ChevronDown, Trash2, RefreshCw, Play, Skull, X, Sparkles, Target, Timer, TrendingUp, Award, HelpCircle, Minimize2, Maximize2 } from 'lucide-react';
 
 // ========== STYLES ==========
 const styles = {
@@ -25,6 +25,41 @@ const styles = {
   buttonDanger: 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white',
   input: 'bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500',
 };
+
+// ========== TOOLTIP COMPONENT ==========
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setIsVisible(true)}
+        onMouseLeave={() => setIsVisible(false)}
+        onMouseMove={handleMouseMove}
+        className="flex items-center gap-1 cursor-help"
+      >
+        {children}
+        <HelpCircle className="w-3 h-3 text-slate-500 hover:text-slate-300" />
+      </div>
+      {isVisible && (
+        <div
+          className="fixed px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs text-slate-200 whitespace-nowrap z-[100] pointer-events-none shadow-xl"
+          style={{
+            left: position.x + 15,
+            top: position.y - 10,
+          }}
+        >
+          {text}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ========== MONSTER PREVIEW MODAL ==========
 function MonsterPreviewModal({
@@ -122,44 +157,64 @@ function MonsterPreviewModal({
             <h3 className="text-sm font-semibold text-emerald-400">BASE STATS</h3>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400 flex items-center gap-1"><Heart className="w-3 h-3 text-red-400" /> HP</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Maximum health points">
+                <span className="text-slate-400 flex items-center gap-1"><Heart className="w-3 h-3 text-red-400" /> HP</span>
+              </Tooltip>
               <span className="text-red-400 font-semibold">{monster.baseAttributes.hp}</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400 flex items-center gap-1"><Sword className="w-3 h-3 text-orange-400" /> Attack</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Base damage per attack">
+                <span className="text-slate-400 flex items-center gap-1"><Sword className="w-3 h-3 text-orange-400" /> Attack</span>
+              </Tooltip>
               <span className="text-orange-400 font-semibold">{monster.baseAttributes.attack}</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400 flex items-center gap-1"><Shield className="w-3 h-3 text-blue-400" /> Defense</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Reduces incoming damage">
+                <span className="text-slate-400 flex items-center gap-1"><Shield className="w-3 h-3 text-blue-400" /> Defense</span>
+              </Tooltip>
               <span className="text-blue-400 font-semibold">{monster.baseAttributes.defense}</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">Speed</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Attacks per second">
+                <span className="text-slate-400">Speed</span>
+              </Tooltip>
               <span className="text-cyan-400 font-semibold">{monster.baseAttributes.attackSpeed.toFixed(1)}/s</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">Crit %</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Chance to deal critical damage">
+                <span className="text-slate-400">Crit %</span>
+              </Tooltip>
               <span className="text-amber-400 font-semibold">{(monster.baseAttributes.critChance * 100).toFixed(0)}%</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">Crit DMG</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Damage multiplier on critical hits">
+                <span className="text-slate-400">Crit DMG</span>
+              </Tooltip>
               <span className="text-amber-400 font-semibold">{(monster.baseAttributes.critDamage * 100).toFixed(0)}%</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">Dodge</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Chance to avoid attacks completely">
+                <span className="text-slate-400">Dodge</span>
+              </Tooltip>
               <span className="text-green-400 font-semibold">{(monster.baseAttributes.dodgeChance * 100).toFixed(0)}%</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">DMG Red.</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Percentage of damage ignored">
+                <span className="text-slate-400">DMG Red.</span>
+              </Tooltip>
               <span className="text-blue-400 font-semibold">{(monster.baseAttributes.damageReduction * 100).toFixed(0)}%</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">Penetration</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Ignores enemy defense percentage">
+                <span className="text-slate-400">Penetration</span>
+              </Tooltip>
               <span className="text-purple-400 font-semibold">{(monster.baseAttributes.penetration * 100).toFixed(0)}%</span>
             </div>
-            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between text-sm">
-              <span className="text-slate-400">Haste</span>
+            <div className="bg-slate-700/50 p-2 rounded-lg flex justify-between items-center text-sm">
+              <Tooltip text="Reduces ability cooldowns">
+                <span className="text-slate-400">Haste</span>
+              </Tooltip>
               <span className="text-pink-400 font-semibold">{(monster.baseAttributes.haste * 100).toFixed(0)}%</span>
             </div>
           </div>
@@ -176,6 +231,7 @@ function BattleResultsScreen({
   defeatedMonsters,
   newUnlocks,
   battleCount,
+  battleStats,
   onContinue,
 }: {
   winner: 'player' | 'enemy';
@@ -183,13 +239,53 @@ function BattleResultsScreen({
   defeatedMonsters: MonsterTemplate[];
   newUnlocks: string[];
   battleCount: number;
+  battleStats?: Record<string, { damageDealt: number; damageTaken: number; healing: number; kills: number }>;
   onContinue: () => void;
 }) {
   const isVictory = winner === 'player';
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={() => setIsMinimized(false)}
+          className={`${styles.card} p-4 flex items-center gap-3 hover:border-cyan-500 transition-colors`}
+        >
+          <span className={`text-2xl ${isVictory ? 'animate-bounce' : 'animate-pulse'}`}>
+            {isVictory ? '🏆' : '💀'}
+          </span>
+          <div className="text-left">
+            <p className={`font-bold ${isVictory ? 'text-emerald-400' : 'text-red-400'}`}>
+              {isVictory ? 'VICTORY!' : 'DEFEAT!'}
+            </p>
+            <p className="text-sm text-slate-400">Battle {battleCount}</p>
+          </div>
+          <Maximize2 className="w-4 h-4 text-slate-400" />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`${styles.card} p-8 max-w-lg w-full text-center`}>
+      <div className={`${styles.card} p-8 max-w-2xl w-full text-center max-h-[90vh] overflow-y-auto`}>
+        {/* Minimize Button */}
+        <button
+          onClick={() => setIsMinimized(true)}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          <Minimize2 className="w-5 h-5" />
+        </button>
+
+        {/* Continue Button at Top */}
+        <button
+          onClick={onContinue}
+          className={`${styles.button} ${styles.buttonPrimary} px-8 py-3 text-lg w-full mb-6`}
+        >
+          {isVictory ? 'Continue to Next Battle' : 'Return to Team'}
+        </button>
+
         {/* Victory/Defeat Banner */}
         <div className={`text-6xl mb-4 ${isVictory ? 'animate-bounce' : 'animate-pulse'}`}>
           {isVictory ? '🏆' : '💀'}
@@ -254,13 +350,44 @@ function BattleResultsScreen({
           </p>
         )}
 
-        {/* Continue Button */}
-        <button
-          onClick={onContinue}
-          className={`${styles.button} ${styles.buttonPrimary} px-8 py-4 text-lg w-full`}
-        >
-          {isVictory ? 'Continue to Next Battle' : 'Return to Team'}
-        </button>
+        {/* Battle Stats */}
+        {battleStats && Object.keys(battleStats).length > 0 && (
+          <div className="bg-slate-700/50 rounded-xl p-4">
+            <p className="text-sm font-semibold text-slate-300 mb-3">BATTLE STATS</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(battleStats).map(([monsterId, stats]) => {
+                const template = getMonsterById(monsterId);
+                if (!template) return null;
+                return (
+                  <div key={monsterId} className="bg-slate-800/50 p-3 rounded-lg text-left">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{template.emoji}</span>
+                      <span className="font-semibold text-slate-200">{template.name}</span>
+                    </div>
+                    <div className="text-xs text-slate-400 space-y-1">
+                      <div className="flex justify-between">
+                        <span>Damage Dealt:</span>
+                        <span className="text-orange-400 font-semibold">{Math.floor(stats.damageDealt)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Damage Taken:</span>
+                        <span className="text-red-400 font-semibold">{Math.floor(stats.damageTaken)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Healing:</span>
+                        <span className="text-green-400 font-semibold">{Math.floor(stats.healing)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Kills:</span>
+                        <span className="text-yellow-400 font-semibold">{stats.kills}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -397,7 +524,7 @@ function MonsterCard({
           <div className="mb-2">
             <div className="flex items-center justify-between text-xs mb-1">
               <Zap className="w-3 h-3 text-yellow-400" />
-              <span className="text-slate-400">Ultimate</span>
+              <span className="text-slate-400">{Math.floor(monster.ultimateMeter)} / {monster.template.ultimate.meterMax}</span>
             </div>
             <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
               <div
@@ -439,7 +566,7 @@ function MonsterCard({
 }
 
 // ========== BATTLE LOG COMPONENT ==========
-function BattleLog({ log }: { log: string[] }) {
+function BattleLog({ log, startTime }: { log: string[]; startTime: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -451,20 +578,24 @@ function BattleLog({ log }: { log: string[] }) {
   return (
     <div
       ref={containerRef}
-      className="h-48 overflow-y-auto bg-slate-900/50 rounded-xl p-3 text-xs font-mono border border-slate-700"
+      className="h-36 overflow-y-auto bg-slate-900/50 rounded-xl p-3 text-xs font-mono border border-slate-700"
     >
-      {log.map((entry, i) => (
-        <div key={i} className={`${
-          entry.includes('CRIT') ? 'text-orange-400' :
-          entry.includes('DODGE') ? 'text-cyan-400' :
-          entry.includes('***') || entry.includes('VICTORY') ? 'text-yellow-400 font-bold' :
-          entry.includes('DEFEAT') ? 'text-red-400 font-bold' :
-          entry.includes('SLAIN') ? 'text-red-300' :
-          'text-slate-400'
-        }`}>
-          {entry}
-        </div>
-      ))}
+      {log.map((entry, i) => {
+        const timestamp = ((Date.now() - startTime) / 1000).toFixed(1);
+        return (
+          <div key={i} className={`${
+            entry.includes('CRIT') ? 'text-orange-400' :
+            entry.includes('DODGE') ? 'text-cyan-400' :
+            entry.includes('***') || entry.includes('VICTORY') ? 'text-yellow-400 font-bold' :
+            entry.includes('DEFEAT') ? 'text-red-400 font-bold' :
+            entry.includes('SLAIN') ? 'text-red-300' :
+            'text-slate-400'
+          }`}>
+            <span className="text-slate-600 mr-2">[{timestamp}s]</span>
+            {entry}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -478,6 +609,7 @@ function Shop({
   onPurchaseMonster,
   onPurchaseUpgrade,
   onPreviewMonster,
+  battleCount,
 }: {
   gold: number;
   unlockedMonsters: string[];
@@ -486,23 +618,58 @@ function Shop({
   onPurchaseMonster: (id: string, cost: number) => void;
   onPurchaseUpgrade: (monsterId: string, stat: string, cost: number) => void;
   onPreviewMonster: (template: MonsterTemplate) => void;
+  battleCount: number;
 }) {
   const [tab, setTab] = useState<'monsters' | 'upgrades'>('monsters');
 
   const upgradeCosts: Record<string, number> = {
-    hp: 50,
-    attack: 40,
-    defense: 40,
-    attackSpeed: 60,
-    critChance: 80,
-    critDamage: 100,
-    dodgeChance: 60,
-    damageReduction: 80,
-    penetration: 70,
-    haste: 70,
+    hp: 30,
+    attack: 30,
+    defense: 30,
+    attackSpeed: 40,
+    critChance: 50,
+    critDamage: 60,
+    dodgeChance: 40,
+    damageReduction: 50,
+    penetration: 45,
+    haste: 45,
+  };
+
+  const upgradeAmounts: Record<string, number> = {
+    hp: 5,
+    attack: 3,
+    defense: 3,
+    attackSpeed: 0.02,
+    critChance: 0.02,
+    critDamage: 0.05,
+    dodgeChance: 0.02,
+    damageReduction: 0.02,
+    penetration: 0.02,
+    haste: 0.02,
+  };
+
+  const statDescriptions: Record<string, string> = {
+    hp: 'Maximum health points',
+    attack: 'Base damage per attack',
+    defense: 'Reduces incoming damage',
+    attackSpeed: 'Attacks per second',
+    critChance: 'Chance to deal critical damage',
+    critDamage: 'Damage multiplier on critical hits',
+    dodgeChance: 'Chance to avoid attacks',
+    damageReduction: 'Percentage of damage ignored',
+    penetration: 'Ignores enemy defense percentage',
+    haste: 'Reduces ability cooldowns',
   };
 
   const lockedMonsters = ALL_MONSTERS.filter(m => !unlockedMonsters.includes(m.id));
+
+  // Show only 6 random monsters, shuffled based on battleCount
+  const shuffledMonsters = [...lockedMonsters].sort((a, b) => {
+    const seedA = (a.id.charCodeAt(0) + battleCount) % 100;
+    const seedB = (b.id.charCodeAt(0) + battleCount) % 100;
+    return seedA - seedB;
+  });
+  const displayedMonsters = shuffledMonsters.slice(0, 6);
 
   return (
     <div className={`${styles.card} p-6 w-full max-w-4xl`}>
@@ -535,86 +702,94 @@ function Shop({
       </div>
 
       {tab === 'monsters' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {lockedMonsters.map((monster) => {
-            const cost = monster.tier * 150;
-            const canAfford = gold >= cost;
-            const teamFull = team.length >= 3;
+        <div>
+          <p className="text-xs text-slate-500 mb-3">Showing 6 random monsters available for recruitment. Changes after each battle.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {displayedMonsters.map((monster) => {
+              const cost = monster.tier * 150;
+              const canAfford = gold >= cost;
+              const teamFull = team.length >= 3;
 
-            return (
-              <div
-                key={monster.id}
-                className={`${styles.card} p-4 cursor-pointer hover:border-cyan-500 transition-colors`}
-                onClick={() => onPreviewMonster(monster)}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl" style={{ filter: `drop-shadow(0 0 10px ${monster.color})` }}>
-                    {monster.emoji}
-                  </span>
-                  <div>
-                    <h4 className="font-semibold text-slate-100">{monster.name}</h4>
-                    <p className="text-xs text-slate-400">Tier {monster.tier}</p>
+              return (
+                <div
+                  key={monster.id}
+                  className={`${styles.card} p-4 cursor-pointer hover:border-cyan-500 transition-colors`}
+                  onClick={() => onPreviewMonster(monster)}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-3xl" style={{ filter: `drop-shadow(0 0 10px ${monster.color})` }}>
+                      {monster.emoji}
+                    </span>
+                    <div>
+                      <h4 className="font-semibold text-slate-100">{monster.name}</h4>
+                      <p className="text-xs text-slate-400">Tier {monster.tier}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-3">{monster.passive.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-yellow-400 font-semibold flex items-center gap-1">
+                      <Coins className="w-4 h-4" />
+                      {cost}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onPurchaseMonster(monster.id, cost); }}
+                      disabled={!canAfford || teamFull}
+                      className={`${styles.button} ${canAfford && !teamFull ? styles.buttonPrimary : 'bg-slate-600 text-slate-400 cursor-not-allowed'} text-sm`}
+                    >
+                      {teamFull ? 'Team Full' : 'Recruit'}
+                    </button>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mb-3">{monster.passive.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-yellow-400 font-semibold flex items-center gap-1">
-                    <Coins className="w-4 h-4" />
-                    {cost}
-                  </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onPurchaseMonster(monster.id, cost); }}
-                    disabled={!canAfford || teamFull}
-                    className={`${styles.button} ${canAfford && !teamFull ? styles.buttonPrimary : 'bg-slate-600 text-slate-400 cursor-not-allowed'} text-sm`}
-                  >
-                    {teamFull ? 'Team Full' : 'Recruit'}
-                  </button>
-                </div>
+              );
+            })}
+            {lockedMonsters.length === 0 && (
+              <div className="col-span-full">
+                <p className="text-slate-400 text-center py-4 mb-4">All monsters unlocked!</p>
+                <p className="text-slate-500 text-center text-sm mb-6">You can recruit duplicates from the team management screen below.</p>
               </div>
-            );
-          })}
-          {lockedMonsters.length === 0 && (
-            <p className="text-slate-400 col-span-full text-center py-8">All monsters unlocked!</p>
-          )}
+            )}
+          </div>
         </div>
       )}
 
       {tab === 'upgrades' && (
         <div className="space-y-6">
-          {team.map((monsterId) => {
+          {team.map((monsterId, index) => {
             const template = getMonsterById(monsterId);
             if (!template) return null;
-            const currentUpgrades = upgrades[monsterId] || {};
+            const upgradeKey = `${monsterId}_${index}`;
+            const currentUpgrades = upgrades[upgradeKey] || {};
 
             return (
-              <div key={monsterId} className={`${styles.card} p-4 border border-slate-700`}>
+              <div key={upgradeKey} className={`${styles.card} p-4 border border-slate-700`}>
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-2xl">{template.emoji}</span>
-                  <h4 className="font-semibold text-slate-100">{template.name}</h4>
+                  <h4 className="font-semibold text-slate-100">{template.name} (Slot {index + 1})</h4>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                   {Object.entries(upgradeCosts).map(([stat, baseCost]) => {
                     const timesUpgraded = (currentUpgrades as Record<string, number>)[stat] || 0;
-                    const cost = baseCost + (timesUpgraded * 20);
-                    const canAfford = gold >= cost;
+                    const cost = baseCost + (timesUpgraded * 15);
+                    const canAffordAfterThis = gold >= cost;
 
                     return (
-                      <button
-                        key={stat}
-                        onClick={() => onPurchaseUpgrade(monsterId, stat, cost)}
-                        disabled={!canAfford}
-                        className={`p-3 rounded-xl text-left transition-all ${canAfford ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-800 opacity-50 cursor-not-allowed'}`}
-                      >
-                        <p className="text-xs text-slate-400 capitalize">{stat.replace(/([A-Z])/g, ' $1')}</p>
-                        <p className="text-sm font-semibold text-slate-200">
-                          +{stat === 'attackSpeed' || stat === 'critChance' || stat === 'dodgeChance' || stat === 'damageReduction' || stat === 'penetration' || stat === 'haste' ? '0.01' : '5'}
-                        </p>
-                        <p className="text-xs text-yellow-400 flex items-center gap-1 mt-1">
-                          <Coins className="w-3 h-3" />
-                          {cost}
-                        </p>
-                      </button>
+                      <Tooltip key={stat} text={statDescriptions[stat] || stat}>
+                        <button
+                          onClick={() => onPurchaseUpgrade(upgradeKey, stat, cost)}
+                          disabled={!canAffordAfterThis}
+                          className={`p-3 rounded-xl text-left transition-all w-full ${canAffordAfterThis ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-800 opacity-50 cursor-not-allowed'}`}
+                        >
+                          <p className="text-xs text-slate-400 capitalize">{stat.replace(/([A-Z])/g, ' $1')}</p>
+                          <p className="text-sm font-semibold text-slate-200">
+                            +{upgradeAmounts[stat]} {timesUpgraded > 0 && <span className="text-cyan-400">({timesUpgraded})</span>}
+                          </p>
+                          <p className="text-xs text-yellow-400 flex items-center gap-1 mt-1">
+                            <Coins className="w-3 h-3" />
+                            {cost}
+                          </p>
+                        </button>
+                      </Tooltip>
                     );
                   })}
                 </div>
@@ -637,14 +812,16 @@ function TeamManagement({
   onAddMonster,
   onRemoveMonster,
   onPreviewMonster,
+  onReorderMonster,
 }: {
   team: string[];
   unlockedMonsters: string[];
   onAddMonster: (id: string) => void;
-  onRemoveMonster: (id: string) => void;
+  onRemoveMonster: (index: number) => void;
   onPreviewMonster: (template: MonsterTemplate) => void;
+  onReorderMonster?: (fromIndex: number, toIndex: number) => void;
 }) {
-  const availableMonsters = unlockedMonsters.filter(id => !team.includes(id));
+  const availableMonsters = unlockedMonsters;
 
   const createDisplayMonster = (templateId: string) => {
     const template = getMonsterById(templateId);
@@ -660,28 +837,59 @@ function TeamManagement({
       isAlive: true,
       team: 'player' as const,
       lastAttackTime: 0,
+      totalDamageDealt: 0,
+      totalDamageTaken: 0,
+      totalHealing: 0,
+      kills: 0,
     };
   };
 
   return (
     <div className={`${styles.card} p-6 w-full max-w-4xl`}>
-      <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2 mb-6">
+      <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2 mb-2">
         <Users className="w-6 h-6 text-cyan-400" />
         Your Team ({team.length}/3)
       </h2>
+      <p className="text-xs text-slate-500 mb-4">Position matters: Front monsters (Slot 1) are targeted first. Rearrange using the arrow buttons.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {team.map((monsterId) => {
+        {team.map((monsterId, index) => {
           const monster = createDisplayMonster(monsterId);
           if (!monster) return null;
           return (
-            <MonsterCard
-              key={monsterId}
-              monster={monster}
-              showActions
-              onRemove={() => onRemoveMonster(monsterId)}
-              onPreview={() => onPreviewMonster(monster.template)}
-            />
+            <div key={`${monsterId}_${index}`} className="relative">
+              <MonsterCard
+                monster={monster}
+                showActions
+                onRemove={() => onRemoveMonster(index)}
+                onPreview={() => onPreviewMonster(monster.template)}
+              />
+              {/* Aggro indicator */}
+              <div className="absolute top-2 right-12 px-2 py-0.5 bg-red-900/50 border border-red-700/50 rounded text-xs text-red-300">
+                Aggro: {index === 0 ? 'High' : index === 1 ? 'Medium' : 'Low'}
+              </div>
+              {/* Reordering buttons */}
+              <div className="absolute top-2 left-2 flex flex-col gap-1">
+                {index > 0 && (
+                  <button
+                    onClick={() => onReorderMonster?.(index, index - 1)}
+                    className="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+                    title="Move up (higher aggro)"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                )}
+                {index < team.length - 1 && (
+                  <button
+                    onClick={() => onReorderMonster?.(index, index + 1)}
+                    className="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+                    title="Move down (lower aggro)"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           );
         })}
 
@@ -694,7 +902,7 @@ function TeamManagement({
 
       {availableMonsters.length > 0 && team.length < 3 && (
         <div>
-          <p className="text-sm text-slate-400 mb-3">Available monsters:</p>
+          <p className="text-sm text-slate-400 mb-3">Available monsters (can add duplicates):</p>
           <div className="flex flex-wrap gap-2">
             {availableMonsters.map((id) => {
               const template = getMonsterById(id);
@@ -720,12 +928,17 @@ function TeamManagement({
 
 // ========== MAIN GAME COMPONENT ==========
 function Game() {
-  const [gameState, setGameState] = useState<GameState>(initializeGame);
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const state = initializeGame();
+    return { ...state, totalLosses: state.totalLosses || 0 };
+  });
   const [showStarterSelect, setShowStarterSelect] = useState(false);
   const [battle, setBattle] = useState<BattleState | null>(null);
   const [isBattleActive, setIsBattleActive] = useState(false);
   const [previewMonster, setPreviewMonster] = useState<MonsterTemplate | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [battleSpeed, setBattleSpeed] = useState(1);
+  const [battleStats, setBattleStats] = useState<Record<string, { damageDealt: number; damageTaken: number; healing: number; kills: number }>>({});
   const [resultsData, setResultsData] = useState<{
     winner: 'player' | 'enemy';
     goldReward: number;
@@ -774,11 +987,32 @@ function Game() {
       const defeatedMonsterIds = battle.enemyMonsters.map(m => m.template.id);
       const newUnlocks = playerWon ? defeatedMonsterIds.filter(id => !gameState.unlockedMonsters.includes(id)) : [];
 
+      // Build battle stats from all monsters
+      const stats: Record<string, { damageDealt: number; damageTaken: number; healing: number; kills: number }> = {};
+      battle.playerMonsters.forEach(m => {
+        stats[m.template.id] = {
+          damageDealt: m.totalDamageDealt || 0,
+          damageTaken: m.totalDamageTaken || 0,
+          healing: m.totalHealing || 0,
+          kills: m.kills || 0,
+        };
+      });
+      battle.enemyMonsters.forEach(m => {
+        stats[m.template.id] = {
+          damageDealt: m.totalDamageDealt || 0,
+          damageTaken: m.totalDamageTaken || 0,
+          healing: m.totalHealing || 0,
+          kills: m.kills || 0,
+        };
+      });
+      setBattleStats(stats);
+
       // Update game state
       setGameState(prev => ({
         ...prev,
         gold: prev.gold + goldReward,
         battleCount: prev.battleCount + (playerWon ? 1 : 0),
+        totalLosses: (prev.totalLosses || 0) + (playerWon ? 0 : 1),
         unlockedMonsters: playerWon ? [...prev.unlockedMonsters, ...newUnlocks] : prev.unlockedMonsters,
       }));
 
@@ -804,7 +1038,8 @@ function Game() {
     if (!isBattleActive || !battle) return;
 
     const tick = (timestamp: number) => {
-      const deltaTime = (timestamp - lastTimeRef.current) / 1000;
+      let deltaTime = (timestamp - lastTimeRef.current) / 1000;
+      deltaTime *= battleSpeed;
       lastTimeRef.current = timestamp;
 
       setBattle(prevBattle => {
@@ -848,7 +1083,7 @@ function Game() {
           }
 
           // Ultimate
-          const ultiResult = processUltimate(monster, mutableBattle);
+          const ultiResult = processUltimate(monster, mutableBattle, timestamp);
           if (ultiResult) {
             newLog.push(ultiResult);
           }
@@ -892,37 +1127,47 @@ function Game() {
         cancelAnimationFrame(battleLoopRef.current);
       }
     };
-  }, [isBattleActive, endBattle, battle]);
+  }, [isBattleActive, endBattle, battle, battleSpeed]);
 
   const handlePurchaseMonster = (monsterId: string, cost: number) => {
     if (gameState.gold < cost || gameState.team.length >= 3) return;
-    if (gameState.team.includes(monsterId)) return;
 
     setGameState(prev => ({
       ...prev,
       gold: prev.gold - cost,
-      unlockedMonsters: [...prev.unlockedMonsters, monsterId],
+      unlockedMonsters: prev.unlockedMonsters.includes(monsterId) ? prev.unlockedMonsters : [...prev.unlockedMonsters, monsterId],
       team: prev.team.length < 3 ? [...prev.team, monsterId] : prev.team,
     }));
   };
 
-  const handlePurchaseUpgrade = (monsterId: string, stat: string, cost: number) => {
+  const handlePurchaseUpgrade = (upgradeKey: string, stat: string, cost: number) => {
     if (gameState.gold < cost) return;
 
     setGameState(prev => {
-      const currentUpgrades = prev.upgrades[monsterId] || {};
+      const currentUpgrades = prev.upgrades[upgradeKey] || {};
       const currentValue = (currentUpgrades as Record<string, number>)[stat] || 0;
 
-      // Calculate upgrade amount
-      const isPercent = ['critChance', 'dodgeChance', 'damageReduction', 'penetration', 'haste', 'attackSpeed'].includes(stat);
-      const upgradeAmount = isPercent ? 0.01 : 5;
+      // Calculate upgrade amount based on stat
+      const upgradeAmounts: Record<string, number> = {
+        hp: 5,
+        attack: 3,
+        defense: 3,
+        attackSpeed: 0.02,
+        critChance: 0.02,
+        critDamage: 0.05,
+        dodgeChance: 0.02,
+        damageReduction: 0.02,
+        penetration: 0.02,
+        haste: 0.02,
+      };
+      const upgradeAmount = upgradeAmounts[stat] || 5;
 
       return {
         ...prev,
         gold: prev.gold - cost,
         upgrades: {
           ...prev.upgrades,
-          [monsterId]: {
+          [upgradeKey]: {
             ...currentUpgrades,
             [stat]: currentValue + upgradeAmount,
           },
@@ -939,11 +1184,22 @@ function Game() {
     }));
   };
 
-  const handleRemoveFromTeam = (monsterId: string) => {
+  const handleRemoveFromTeam = (index: number) => {
     setGameState(prev => ({
       ...prev,
-      team: prev.team.filter(id => id !== monsterId),
+      team: prev.team.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleReorderTeam = (fromIndex: number, toIndex: number) => {
+    setGameState(prev => {
+      const newTeam = [...prev.team];
+      [newTeam[fromIndex], newTeam[toIndex]] = [newTeam[toIndex], newTeam[fromIndex]];
+      return {
+        ...prev,
+        team: newTeam,
+      };
+    });
   };
 
   const resetGame = () => {
@@ -955,6 +1211,7 @@ function Game() {
         unlockedMonsters: [],
         upgrades: {},
         battleCount: 0,
+        totalLosses: 0,
       });
       setShowStarterSelect(true);
       setBattle(null);
@@ -983,6 +1240,7 @@ function Game() {
           defeatedMonsters={resultsData.defeatedMonsters}
           newUnlocks={resultsData.newUnlocks}
           battleCount={gameState.battleCount}
+          battleStats={battleStats}
           onContinue={handleContinue}
         />
       )}
@@ -992,7 +1250,7 @@ function Game() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-100">Monster Autobattler</h1>
-            <p className="text-slate-400">Battle {gameState.battleCount + 1}</p>
+            <p className="text-slate-400">Wins: {gameState.battleCount} | Losses: {gameState.totalLosses || 0}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-xl font-bold text-yellow-400">
@@ -1009,40 +1267,63 @@ function Game() {
         {/* Battle Screen or Team Management */}
         {battle ? (
           <div className={`${styles.card} p-6`}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Player Team */}
-              <div>
-                <h3 className="text-lg font-semibold text-cyan-400 mb-4 flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Your Team
-                </h3>
-                <div className="space-y-3">
-                  {battle.playerMonsters.map(m => (
-                    <MonsterCard key={m.id} monster={m} onPreview={() => setPreviewMonster(m.template)} />
-                  ))}
+            {/* Speed Controls */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-300">Battle in Progress</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-400">Speed:</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 4].map((speed) => (
+                      <button
+                        key={speed}
+                        onClick={() => setBattleSpeed(speed)}
+                        className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${battleSpeed === speed ? 'bg-cyan-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Battle Log */}
-              <div>
-                <h3 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                  <Sword className="w-5 h-5" />
-                  Combat Log
-                </h3>
-                <BattleLog log={battle.log} />
+            {/* Enemy Team (Top) */}
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
+                <Skull className="w-4 h-4" />
+                Enemies
+              </h3>
+              <div className="flex gap-4 flex-wrap">
+                {battle.enemyMonsters.map(m => (
+                  <div key={m.id} className="flex-1 min-w-[200px] max-w-[300px]">
+                    <MonsterCard monster={m} isEnemy onPreview={() => setPreviewMonster(m.template)} />
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Enemy Team */}
-              <div>
-                <h3 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
-                  <Skull className="w-5 h-5" />
-                  Enemies
-                </h3>
-                <div className="space-y-3">
-                  {battle.enemyMonsters.map(m => (
-                    <MonsterCard key={m.id} monster={m} isEnemy onPreview={() => setPreviewMonster(m.template)} />
-                  ))}
-                </div>
+            {/* Battle Log (Middle) */}
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                <Sword className="w-4 h-4" />
+                Combat Log
+              </h3>
+              <BattleLog log={battle.log} startTime={battle.startTime} />
+            </div>
+
+            {/* Player Team (Bottom) */}
+            <div>
+              <h3 className="text-sm font-semibold text-cyan-400 mb-2 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Your Team
+              </h3>
+              <div className="flex gap-4 flex-wrap">
+                {battle.playerMonsters.map(m => (
+                  <div key={m.id} className="flex-1 min-w-[200px] max-w-[300px]">
+                    <MonsterCard monster={m} onPreview={() => setPreviewMonster(m.template)} />
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -1056,7 +1337,36 @@ function Game() {
               onAddMonster={handleAddToTeam}
               onRemoveMonster={handleRemoveFromTeam}
               onPreviewMonster={setPreviewMonster}
+              onReorderMonster={handleReorderTeam}
             />
+
+            {/* Monsters in Reserve */}
+            {gameState.unlockedMonsters.length > 0 && (
+              <div className={`${styles.card} p-4`}>
+                <h3 className="text-sm font-semibold text-slate-400 mb-2">Monsters in Reserve (click to preview)</h3>
+                <p className="text-xs text-slate-500 mb-2">Monsters you own that are not in your active team</p>
+                <div className="flex flex-wrap gap-2">
+                  {gameState.unlockedMonsters.filter(id => !gameState.team.includes(id)).map(id => {
+                    const template = getMonsterById(id);
+                    if (!template) return null;
+                    const isInTeam = gameState.team.includes(id);
+                    const duplicateCount = gameState.team.filter(t => t === id).length;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setPreviewMonster(template)}
+                        className="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-sm text-slate-300 flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isInTeam && !duplicateCount}
+                        title={isInTeam ? 'Already in team (add duplicates from shop)' : 'Click to preview'}
+                      >
+                        <span>{template.emoji}</span>
+                        {template.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Start Battle Button */}
             <div className="text-center">
@@ -1082,30 +1392,8 @@ function Game() {
               onPurchaseMonster={handlePurchaseMonster}
               onPurchaseUpgrade={handlePurchaseUpgrade}
               onPreviewMonster={setPreviewMonster}
+              battleCount={gameState.battleCount}
             />
-
-            {/* Unlocked Monsters List */}
-            {gameState.unlockedMonsters.length > 0 && (
-              <div className={`${styles.card} p-4`}>
-                <h3 className="text-sm font-semibold text-slate-400 mb-2">Unlocked Monsters (click to preview)</h3>
-                <div className="flex flex-wrap gap-2">
-                  {gameState.unlockedMonsters.map(id => {
-                    const template = getMonsterById(id);
-                    if (!template) return null;
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => setPreviewMonster(template)}
-                        className="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-sm text-slate-300 flex items-center gap-2 cursor-pointer transition-colors"
-                      >
-                        <span>{template.emoji}</span>
-                        {template.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
