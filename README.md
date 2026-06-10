@@ -83,3 +83,6 @@ Generated auto-battler game using bolt.new
 - Implement an equippable item system. Each monster can equip a single item that can raise stats or provide special passive effects.
 - The shop sells equippable items (6 random items that change after each battle).
 - Generate 100 different equippable items
+- Monsters can have up to 3 passive abilities. They only start with one and can add more via the shop.
+- The shop sells passive abilities (3 random passives that change after each battle).
+- Make passive abilities more impactful
