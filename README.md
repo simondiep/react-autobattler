@@ -56,20 +56,30 @@ Generated auto-battler game using bolt.new
 
 ### On Deck
 
-- Allow buying multiples of the same monster
+- Track the count of each monster you own. You should not start with any monsters besides the single monster you chose. Duplicate copies should not exist at the start.
+- Generate unique nicknames for each monster and use those along with the regular name in battle logs.
+- Allow buying multiples of the same monster.
 - Provide the option to merge two of the same monster to get increased attributes.  The purchased attributes should be included. Indicate the number of merged monsters with stars.
-- Reduce the cost of attribute upgrades in the shop
-- The HP attribute upgrade should provide 25 HP
-- The attribute tooltips are not showing
+- Reduce the cost of attribute upgrades in the shop.
+- The HP attribute upgrade should provide 25 HP.
+- Higher tier monsters should cost more gold.
+- The attribute tooltips are not showing.
+- Shop attribute upgrades should not increase in price each time you buy them.
+- The purchased attribute upgrades should be tied to the monster and not the slot. The upgrades should reflect on the monster summary as well
 - After each battle victory, provide the choice to recruit one of the enemies defeated.
-- The Return to Team button should not overlap the minimize modal button
-- The battle log should color code each log entry to differentiate your team vs the enemy team actions
-- The battle log timestamps are wrong. The timestamps are all the same, and aren't reset from previous battles.
+- The Return to Team button should not overlap the minimize modal button.
+- The battle log should color code each log entry to differentiate your team vs the enemy team actions.
+- The battle log timestamps are wrong. The timestamps are all the same. They should be not all be linked.
 - For each battle log entry, the monster performing the action should always be mentioned first.  Then the action name. Then the targets. For damaging moves, list the damage dealt to each target.
 - The battle summary modal should show both teams' stats, layed out like how the battle screen is, with top and bottom rows.
 - The battle summary stats are wrong. Sometimes 0s are shown when they should not be 0.
-- Rename the Reset Button to "Reset All Progress and Start Over"
-- Add a tooltip to the Trash icon next to each monster
+- Rename the Reset Button to "Reset All Progress and Start Over".
+- Add a tooltip to the Trash icon next to each monster.
 - The "Monsters in Reserve" section seems redundant with the "Available monsters" section. Remove the "Monsters in Reserve" section and just indicate you have monsters in reserve.
-- The aggro label should not be overlapping other text
-- On the monster summary modal, make it wider, and show the attributes to the left and abilities to the right
+- The aggro label should not be overlapping other text.
+- On the monster summary modal, make it wider, and show the attributes to the left and abilities to the right.
+- Fix abilities like Diamond Shield that provide a self buff to target self instead of all enemies.
+- Fix Diamond Shield ability and other shield providing abilities, such that the shield takes damage instead of health until the shield is removed.
+- Implement an equippable item system. Each monster can equip a single item that can raise stats or provide special passive effects.
+- The shop sells equippable items (6 random items that change after each battle).
+- Generate 100 different equippable items
