@@ -54,7 +54,7 @@ Generated auto-battler game using bolt.new
 - The Shop that shows monsters, should only show 6 monsters at a time (randomly picked after each battle).
 - Provide more clear labels that the team formation affects who is targeted more, and also show the targeted percentage, maybe call it aggro.
 
-### On Deck
+### Day 3
 
 - Track the count of each monster you own. You should not start with any monsters besides the single monster you chose. Duplicate copies should not exist at the start.
 - Generate unique nicknames for each monster and use those along with the regular name in battle logs.
@@ -86,3 +86,15 @@ Generated auto-battler game using bolt.new
 - Monsters can have up to 3 passive abilities. They only start with one and can add more via the shop.
 - The shop sells passive abilities (3 random passives that change after each battle).
 - Make passive abilities more impactful
+- There are three bugs in the screenshot of the battle summary modal.
+  - The Battle number indicates 2, when it should be 1.
+  - When clicking the icon to recruit, nothing happens.
+  - The HPs for each team are both above 0. The enemy team lost, so their HP should be 0.
+- Lower the cost of items in the shop
+- Make the passives more impactful. Currently they barely make any difference.
+- The layout of a monster card should not have overlapping elements (see screenshot)
+
+### On Deck
+
+- After a battle, I received more than one copy of a monster. It should be one.
+- Clicking the Merge button on the monster card doesn't seem to have any feedback. It also does not increase stats as described. There should also be indication on the card, maybe a star icon with tooltip, that 1 or more copies were merged.
