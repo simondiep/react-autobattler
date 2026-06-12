@@ -94,7 +94,49 @@ Generated auto-battler game using bolt.new
 - Make the passives more impactful. Currently they barely make any difference.
 - The layout of a monster card should not have overlapping elements (see screenshot)
 
-### On Deck
+### Day 4
 
 - After a battle, I received more than one copy of a monster. It should be one.
 - Clicking the Merge button on the monster card doesn't seem to have any feedback. It also does not increase stats as described. There should also be indication on the card, maybe a star icon with tooltip, that 1 or more copies were merged.
+- The battle summary stats are still potentially stale. See screenshot.  The damage dealt and damage taken, as well as healed.  Additionally, the "BATTLE STATS" for each monster should be part of the "ENEMY TEAM" and "YOUR TEAM" sections, based on which team a monster is on.
+- After recruiting a monster on the battle summary screen, I no longer see it in the "Your Team" section
+- After beating two of the same monsters, I should not be shown duplicates in the recruit section. I also should not be able to recruit more than one per battle. Also deduplicate the same monster in the "NEW MONSTERS UNLOCKED!" section.
+- There might be a damage calculation bug where a monster deals 1 damage. See screenshot.
+- I noticed my monster died while having shield. All damage taken should be deducted from shield first. Until the shield is gone, the monster should not take any HP loss.
+- The shop (Items/Passives) is not being refreshed after each battle
+- The shop tooltips for attributes are not showing
+- The shop attributes when purchased don't appear to do anything, except deduct gold
+- Buying an item from the shop doesn't appear to do anything, except deduct gold
+- Buying a passive from the shop doesn't appear to do anything, except deduct gold
+- When buying a passive from the shop, it is unclear to me that it did anything or persists on the monster
+- In the combat log, it is unclear how much damage is dealt when a monster uses an ultimate. Indicate that in the log.
+- The battle summary of enemy team and your team should show [Damage dealt, damage taken, healing done, kills]. It should not show current hp.
+- The battle summary numbers appears wrong for damage taken, as the end of battle damage taken should be more or equal to the monsters hp for those that died.
+- The battle summary seems to not show for a monster if there is another monster of the same type - it should show.
+- On the monster summary modal, the close button x, doesn't do anything. It should close the modal.
+- Explain how the ultimate bar charges. It should not scale based on damage dealt, but on actions. For example, attacking, taking damage, or using a skill.
+- There seems to be a battle bug where one monster is attacking 4 times a second, when the base stats speed is 1.3/s (see screenshot)
+- There is another battle bug where one monster uses multiple abilities and ultimates consecutively without delay (see screenshot)
+- Show all purchased attributes, passives, and stat increases in the monster summary modal
+- When a monster is equipped with an item, hovering over the item should show a tooltip of what the item does
+- In the attribute shop, it is unclear what buying attack speed does. Does it increase attacks per second? Same with the other decimal point attributes. Clarify this.
+- The Continue to next battle button is overlapping the minimize button
+- The monster card first row is too squished (see screenshot). There is not enough space for the monster name. The item name also appears duplicated.
+- The monster summary attribute tooltips are showing way right of where the attribute hover is happening (see screenshot)
+
+### On Deck
+
+- In the monster summary modal, show all stat increases to the right of the base stats, along with the total stat.  All in the same row.
+- Tooltip text positions are still way off across the board for all tooltips (See screenshot)
+- The shop attribute upgrades still show as +0.02 instead of percentages
+- Fix the battle summary kill count - I see a total of 5 kills in a single battle which doesn't make sense
+- In the battle summary, make the modal wider, and make each monster row more compact height-wise.
+- Make the Your Team and Shop cards wider
+- The HP stat on items needs to be much higher
+- In the monster summary modal, the close button (x) clickable area does not match where the button is.  The clickable area is off to the right. Fix that.
+- For the passive ability "Thorns", any damage dealt by this should be listed in the battle logs and tracked as damage dealt on the battle summary.
+- The monster summary modal on the Battle screen is missing a lot of info compared to the monster summary modal on the Shop screen. Why aren't they using the same modal?
+- In the battle logs, any actions that deal damage to multiple targets should indicate the total damage dealt per target.
+- The battle summary modal should show two tabs, one where you choose to recruit a defeated enemy, and another tab for the battle stats
+- In the shop passives tab, explain a monster can only equip two passives purchased from the shop
+- The shop items are too underwhelming, make them much more impactful.
