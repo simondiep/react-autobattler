@@ -3,23 +3,24 @@ export interface MonsterAttributes {
   maxHp: number;
   attack: number;
   defense: number;
-  attackSpeed: number; // attacks per second
-  critChance: number; // 0-1
-  critDamage: number; // multiplier e.g. 1.5 = 150%
-  dodgeChance: number; // 0-1
-  damageReduction: number; // 0-1
-  penetration: number; // 0-1, ignores % defense
-  haste: number; // reduces cooldowns by %
+  attackSpeed: number;
+  critChance: number;
+  critDamage: number;
+  dodgeChance: number;
+  damageReduction: number;
+  penetration: number;
+  haste: number;
 }
 
 export interface Ability {
   id: string;
   name: string;
   description: string;
-  cooldown: number; // seconds
-  initialDelay: number; // seconds before first cast
-  targetCount: number; // 0 = all enemies, 1 = single, 2+ = multi
-  targetAllies?: boolean; // if true, targets allies instead of enemies
+  cooldown: number;
+  initialDelay: number;
+  targetCount: number;
+  targetSelf?: boolean;
+  targetAllies?: boolean;
   execute: (self: BattleMonster, targets: BattleMonster[], battle: BattleState, timestamp: number) => AbilityResult;
 }
 
@@ -29,7 +30,8 @@ export interface Ultimate {
   description: string;
   meterMax: number;
   targetCount: number;
-  targetAllies?: boolean; // if true, targets allies instead of enemies
+  targetSelf?: boolean;
+  targetAllies?: boolean;
   execute: (self: BattleMonster, targets: BattleMonster[], battle: BattleState, timestamp: number) => AbilityResult;
 }
 
@@ -45,10 +47,26 @@ export interface PassiveAbility {
   onTurnStart?: (self: BattleMonster) => void;
 }
 
+export interface EquippableItem {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+  tier: number;
+  statBonus?: Partial<MonsterAttributes>;
+  specialEffect?: PassiveAbility;
+  cost: number;
+}
+
+export interface ShopPassiveEntry {
+  passive: PassiveAbility;
+  cost: number;
+}
+
 export interface MonsterTemplate {
   id: string;
   name: string;
-  tier: number; // 1 = starter, 2, 3
+  tier: number;
   baseAttributes: Omit<MonsterAttributes, 'hp' | 'maxHp'> & { hp: number };
   passive: PassiveAbility;
   abilities: [Ability, Ability];
@@ -59,21 +77,23 @@ export interface MonsterTemplate {
 
 export interface BattleMonster {
   id: string;
+  nickname: string;
   template: MonsterTemplate;
   attributes: MonsterAttributes;
   currentHp: number;
   ultimateMeter: number;
-  abilityCooldowns: [number, number]; // remaining cooldown for each ability
-  abilityDelays: [number, number]; // initial delay remaining
+  abilityCooldowns: [number, number];
+  abilityDelays: [number, number];
   isAlive: boolean;
   team: 'player' | 'enemy';
   lastAttackTime: number;
-  // Battle stats
+  mergeCount: number;
+  equippedItem?: EquippableItem;
+  extraPassives: PassiveAbility[];
   totalDamageDealt: number;
   totalDamageTaken: number;
   totalHealing: number;
   kills: number;
-  // Dynamic properties used by abilities
   stunned?: boolean;
   stunnedUntil?: number;
   shield?: number;
@@ -86,7 +106,6 @@ export interface BattleMonster {
   damageImmune?: boolean;
   reflectDamage?: number;
   hydraResurrection?: boolean;
-  // Buff tracking properties
   _infernoBuff?: number;
   _veilBoost?: number;
   _armorBoost?: number;
@@ -109,24 +128,45 @@ export interface BattleMonster {
 export interface AbilityResult {
   damage?: number;
   healing?: number;
+  shield?: number;
   buff?: Partial<MonsterAttributes>;
   message: string;
+}
+
+export interface BattleLogEntry {
+  timestamp: number;
+  message: string;
+  actorTeam: 'player' | 'enemy';
+  isCrit?: boolean;
+  isKill?: boolean;
+  isUltimate?: boolean;
 }
 
 export interface BattleState {
   playerMonsters: BattleMonster[];
   enemyMonsters: BattleMonster[];
-  log: string[];
+  log: BattleLogEntry[];
   isOver: boolean;
   winner?: 'player' | 'enemy';
   startTime: number;
+  elapsedTime: number;
+}
+
+export interface TeamMonster {
+  templateId: string;
+  nickname: string;
+  upgrades: Partial<MonsterAttributes>;
+  mergeCount: number;
+  equippedItemId?: string;
+  extraPassiveIds: string[];
 }
 
 export interface GameState {
   gold: number;
-  team: string[]; // monster template ids (can have duplicates)
+  team: TeamMonster[];
+  monsterInventory: Record<string, number>;
   unlockedMonsters: string[];
-  upgrades: Record<string, Partial<MonsterAttributes>>;
+  ownedItemIds: string[];
   battleCount: number;
   totalLosses: number;
 }

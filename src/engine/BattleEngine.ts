@@ -1,18 +1,36 @@
-import { BattleMonster, BattleState, GameState } from '../types/monster';
+import { BattleMonster, BattleState, GameState, BattleLogEntry, EquippableItem } from '../types/monster';
 import { createBattleMonster, getMonsterById } from '../data/monsters';
+import { getItemById, SHOP_PASSIVE_ENTRIES } from '../data/items';
 
 const GAME_STORAGE_KEY = 'monster_autobattler_save';
+
+const ADJECTIVES = [
+  'Shadow', 'Flame', 'Frost', 'Storm', 'Void', 'Crystal', 'Iron', 'Mystic',
+  'Primal', 'Blazing', 'Icy', 'Lightning', 'Ancient', 'Cursed', 'Holy',
+  'Dark', 'Bright', 'Raging', 'Silent', 'Savage'
+];
+
+const SUFFIXES = [
+  'Fang', 'Claw', 'Strike', 'Wing', 'Blade', 'Heart', 'Mind', 'Soul',
+  'Breaker', 'Slayer', 'Wrath', 'Guardian', 'Seeker', 'Caller', 'Master'
+];
+
+export function generateNickname(_templateName: string): string {
+  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const suffix = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
+  return `${adjective} ${suffix}`;
+}
 
 export function loadGameState(): GameState {
   const saved = localStorage.getItem(GAME_STORAGE_KEY);
   if (saved) {
     const parsed = JSON.parse(saved);
-    // Add default for missing fields (backwards compatibility)
     return {
       gold: 0,
       team: [],
+      monsterInventory: {},
       unlockedMonsters: [],
-      upgrades: {},
+      ownedItemIds: [],
       battleCount: 0,
       totalLosses: 0,
       ...parsed,
@@ -21,8 +39,9 @@ export function loadGameState(): GameState {
   return {
     gold: 0,
     team: [],
+    monsterInventory: {},
     unlockedMonsters: [],
-    upgrades: {},
+    ownedItemIds: [],
     battleCount: 0,
     totalLosses: 0,
   };
@@ -33,19 +52,25 @@ export function saveGameState(state: GameState): void {
 }
 
 export function initializeGame(): GameState {
-  const state = loadGameState();
-  if (state.unlockedMonsters.length === 0) {
-    return state;
-  }
-  return state;
+  return loadGameState();
 }
 
 export function startNewGame(starterId: string): GameState {
+  const template = getMonsterById(starterId);
+  if (!template) throw new Error(`Monster ${starterId} not found`);
+
   const state: GameState = {
     gold: 100,
-    team: [starterId],
+    team: [{
+      templateId: starterId,
+      nickname: generateNickname(template.name),
+      upgrades: {},
+      mergeCount: 0,
+      extraPassiveIds: [],
+    }],
+    monsterInventory: { [starterId]: 1 },
     unlockedMonsters: [starterId],
-    upgrades: {},
+    ownedItemIds: [],
     battleCount: 0,
     totalLosses: 0,
   };
@@ -96,7 +121,7 @@ export function generateEnemies(battleCount: number, _playerTeamSize: number): B
     const pool = availableMonsters.filter(m => m && m.tier <= tier);
     const template = pool[Math.floor(Math.random() * pool.length)];
     if (template) {
-      const enemy = createBattleMonster(template, 'enemy');
+      const enemy = createBattleMonster(template, 'enemy', generateNickname(template.name));
       enemy.attributes.maxHp = Math.floor(enemy.attributes.maxHp * statMultiplier);
       enemy.attributes.hp = enemy.attributes.maxHp;
       enemy.attributes.attack = Math.floor(enemy.attributes.attack * statMultiplier);
@@ -109,19 +134,76 @@ export function generateEnemies(battleCount: number, _playerTeamSize: number): B
   return enemies;
 }
 
+// Stats stored as decimal fractions (0-1) in attributes but as integers in item data
+const PCT_STATS = new Set(['critChance', 'critDamage', 'dodgeChance', 'damageReduction', 'penetration', 'haste']);
+
+function normalizeItemBonus(key: string, value: number): number {
+  if (PCT_STATS.has(key)) return value / 100;
+  if (key === 'attackSpeed') return value / 10;
+  return value;
+}
+
 export function createPlayerTeam(state: GameState): BattleMonster[] {
-  return state.team.map((id, index) => {
-    const template = getMonsterById(id);
+  return state.team.map((teamMonster, index) => {
+    const template = getMonsterById(teamMonster.templateId);
     if (!template) return null;
 
-    // Get unique upgrades key (index-based for duplicates)
-    const upgradeKey = `${id}_${index}`;
-    const upgrades = state.upgrades[upgradeKey] || state.upgrades[id] || {};
+    let equippedItem: EquippableItem | undefined;
+    if (teamMonster.equippedItemId) {
+      equippedItem = getItemById(teamMonster.equippedItemId);
+    }
 
-    const monster = createBattleMonster(template, 'player', upgrades);
-    monster.id = `${id}-${index}-player`; // Unique ID for duplicates
+    const monster = createBattleMonster(
+      template, 'player', teamMonster.nickname,
+      teamMonster.mergeCount, equippedItem, teamMonster.upgrades
+    );
+
+    // Apply merge bonus (+10% per merge)
+    if (teamMonster.mergeCount > 0) {
+      const mult = 1 + (0.1 * teamMonster.mergeCount);
+      monster.attributes.maxHp = Math.floor(monster.attributes.maxHp * mult);
+      monster.attributes.hp = monster.attributes.maxHp;
+      monster.attributes.attack = Math.floor(monster.attributes.attack * mult);
+      monster.attributes.defense = Math.floor(monster.attributes.defense * mult);
+      monster.currentHp = monster.attributes.maxHp;
+    }
+
+    // Apply item stat bonuses (normalized to attribute scale)
+    if (equippedItem?.statBonus) {
+      Object.entries(equippedItem.statBonus).forEach(([key, value]) => {
+        if (value !== undefined) {
+          const normalizedValue = normalizeItemBonus(key, value);
+          if (key === 'hp' || key === 'maxHp') {
+            monster.attributes.maxHp += normalizedValue;
+            monster.currentHp = monster.attributes.maxHp;
+          } else if (key in monster.attributes) {
+            (monster.attributes as unknown as Record<string, number>)[key] += normalizedValue;
+          }
+        }
+      });
+    }
+
+    // Load extra passives from IDs
+    if (teamMonster.extraPassiveIds.length > 0) {
+      monster.extraPassives = teamMonster.extraPassiveIds
+        .map(id => SHOP_PASSIVE_ENTRIES.find(e => e.passive.id === id)?.passive)
+        .filter(Boolean) as BattleMonster['extraPassives'];
+    }
+
+    monster.id = `${teamMonster.templateId}-${index}-player`;
     return monster;
   }).filter(Boolean) as BattleMonster[];
+}
+
+export function triggerTurnStart(monster: BattleMonster): void {
+  const allPassives = [
+    monster.template.passive,
+    ...monster.extraPassives,
+    ...(monster.equippedItem?.specialEffect ? [monster.equippedItem.specialEffect] : [])
+  ];
+  for (const passive of allPassives) {
+    if (passive.onTurnStart) passive.onTurnStart(monster);
+  }
 }
 
 export function calculateDamage(
@@ -129,17 +211,14 @@ export function calculateDamage(
   defender: BattleMonster,
   currentTimestamp: number
 ): { damage: number; isCrit: boolean; isDodged: boolean } {
-  // Check if stunned
   if (attacker.stunnedUntil && attacker.stunnedUntil > currentTimestamp) {
     return { damage: 0, isCrit: false, isDodged: false };
   }
 
-  // Check dodge
   if (Math.random() < defender.attributes.dodgeChance) {
     return { damage: 0, isCrit: false, isDodged: true };
   }
 
-  // Check damage immune
   if (defender.damageImmune) {
     return { damage: 0, isCrit: false, isDodged: false };
   }
@@ -149,37 +228,40 @@ export function calculateDamage(
   const effectiveDefense = defender.attributes.defense * (1 - attacker.attributes.penetration);
   const damageReduction = defender.attributes.damageReduction;
   const mitigation = effectiveDefense * 0.5 + baseDamage * damageReduction;
-  let finalDamage = Math.max(1, baseDamage - mitigation);
+  let finalDamage = Math.max(0, baseDamage - mitigation);
 
   const isCrit = Math.random() < attacker.attributes.critChance;
   if (isCrit) {
     finalDamage *= attacker.attributes.critDamage;
   }
 
+  finalDamage = Math.floor(finalDamage);
+
+  // Shield absorbs damage first
+  const preShieldDamage = finalDamage;
   if (defender.shield && defender.shield > 0) {
     const shieldAbsorb = Math.min(defender.shield, finalDamage);
     defender.shield -= shieldAbsorb;
     finalDamage -= shieldAbsorb;
   }
 
-  // Track damage dealt/taken
-  attacker.totalDamageDealt += Math.floor(finalDamage);
-  defender.totalDamageTaken += Math.floor(finalDamage);
+  // Track damage dealt (full amount before shield)
+  attacker.totalDamageDealt += preShieldDamage;
+  // Track HP damage taken (after shield)
+  defender.totalDamageTaken += finalDamage;
 
-  return { damage: Math.floor(finalDamage), isCrit, isDodged: false };
-}
-
-export function getAliveMonsters(battle: BattleState, team: 'player' | 'enemy'): BattleMonster[] {
-  return (team === 'player' ? battle.playerMonsters : battle.enemyMonsters).filter(m => m.isAlive);
+  return { damage: finalDamage, isCrit, isDodged: false };
 }
 
 export function selectTargets(
   self: BattleMonster,
   battle: BattleState,
   count: number,
-  targetAllies: boolean = false
+  targetAllies: boolean = false,
+  targetSelf: boolean = false
 ): BattleMonster[] {
-  // Determine which team to target
+  if (targetSelf) return [self];
+
   let targetTeam: BattleMonster[];
   if (targetAllies) {
     targetTeam = self.team === 'player' ? battle.playerMonsters : battle.enemyMonsters;
@@ -188,44 +270,36 @@ export function selectTargets(
   }
 
   const aliveTargets = targetTeam.filter(m => m.isAlive);
-
-  if (count === 0) {
-    return aliveTargets;
-  }
-
-  // Target selection: favor first enemy, then second, then third (by position)
-  // This means targeting the front-most positions first
+  if (count === 0) return aliveTargets;
   return aliveTargets.slice(0, count);
 }
 
-export function selectAllyTargets(
-  self: BattleMonster,
-  battle: BattleState,
-  count: number
-): BattleMonster[] {
-  const allyTeam = self.team === 'player' ? battle.playerMonsters : battle.enemyMonsters;
-  const aliveAllies = allyTeam.filter(m => m.isAlive);
+function triggerAllPassives(
+  monster: BattleMonster,
+  event: 'onAttack' | 'onHit' | 'onKill' | 'onDeath',
+  other: BattleMonster,
+  damage: number = 0
+): void {
+  const allPassives = [
+    monster.template.passive,
+    ...monster.extraPassives,
+    ...(monster.equippedItem?.specialEffect ? [monster.equippedItem.specialEffect] : [])
+  ];
 
-  if (count === 0) {
-    return aliveAllies;
+  for (const passive of allPassives) {
+    if (event === 'onAttack' && passive.onAttack) passive.onAttack(monster, other, damage);
+    if (event === 'onHit' && passive.onHit) passive.onHit(monster, other, damage);
+    if (event === 'onKill' && passive.onKill) passive.onKill(monster, other);
+    if (event === 'onDeath' && passive.onDeath) passive.onDeath(monster, other);
   }
-
-  return aliveAllies.slice(0, count);
 }
 
-export function processAttack(monster: BattleMonster, battle: BattleState, timestamp: number): string | null {
+export function processAttack(monster: BattleMonster, battle: BattleState, timestamp: number): BattleLogEntry | null {
   if (!monster.isAlive) return null;
-
-  // Check stun using timestamp
-  if (monster.stunnedUntil && monster.stunnedUntil > timestamp) {
-    return null;
-  }
+  if (monster.stunnedUntil && monster.stunnedUntil > timestamp) return null;
 
   const attackInterval = 1000 / monster.attributes.attackSpeed;
-
-  if (timestamp - monster.lastAttackTime < attackInterval) {
-    return null;
-  }
+  if (timestamp - monster.lastAttackTime < attackInterval) return null;
 
   const targets = selectTargets(monster, battle, 1);
   if (targets.length === 0) return null;
@@ -233,139 +307,133 @@ export function processAttack(monster: BattleMonster, battle: BattleState, times
   const target = targets[0];
   const { damage, isCrit, isDodged } = calculateDamage(monster, target, timestamp);
 
+  monster.lastAttackTime = timestamp;
+
   if (isDodged) {
-    monster.lastAttackTime = timestamp;
-    return `${monster.template.name} attacks ${target.template.name} but they dodge!`;
+    return {
+      timestamp: battle.elapsedTime,
+      message: `${monster.nickname} attacks ${target.nickname} but they dodge!`,
+      actorTeam: monster.team,
+    };
   }
 
-  if (damage === 0) {
-    monster.lastAttackTime = timestamp;
-    return null;
-  }
+  if (damage === 0) return null;
 
   target.currentHp = Math.max(0, target.currentHp - damage);
 
-  // Trigger passive on hit
-  if (monster.template.passive.onAttack) {
-    monster.template.passive.onAttack(monster, target, damage);
-  }
-  if (target.template.passive.onHit) {
-    target.template.passive.onHit(target, monster, damage);
-  }
+  triggerAllPassives(monster, 'onAttack', target, damage);
+  triggerAllPassives(target, 'onHit', monster, damage);
 
-  // Generate ultimate meter
-  monster.ultimateMeter = Math.min(
-    monster.template.ultimate.meterMax,
-    monster.ultimateMeter + 5 + damage * 0.05
-  );
+  // Flat action-based ultimate charging: +10 per attack, +8 for taking a hit
+  monster.ultimateMeter = Math.min(monster.template.ultimate.meterMax, monster.ultimateMeter + 10);
+  target.ultimateMeter = Math.min(target.template.ultimate.meterMax, target.ultimateMeter + 8);
 
-  monster.lastAttackTime = timestamp;
-
-  // Track kill
   if (target.currentHp <= 0) {
     target.isAlive = false;
     monster.kills++;
-    if (monster.template.passive.onKill) {
-      monster.template.passive.onKill(monster, target);
-    }
-    if (target.template.passive.onDeath && !target.hasRevived) {
-      target.template.passive.onDeath(target, monster);
-    }
-    return `${monster.template.name} ${isCrit ? 'CRITS' : 'attacks'} ${target.template.name} for ${damage} damage (SLAIN)!`;
+    triggerAllPassives(monster, 'onKill', target);
+    if (!target.hasRevived) triggerAllPassives(target, 'onDeath', monster);
+
+    return {
+      timestamp: battle.elapsedTime,
+      message: `${monster.nickname} ${isCrit ? 'CRITS' : 'attacks'} ${target.nickname} for ${damage} damage (SLAIN)!`,
+      actorTeam: monster.team,
+      isCrit,
+      isKill: true,
+    };
   }
 
-  return `${monster.template.name} ${isCrit ? 'CRITS' : 'attacks'} ${target.template.name} for ${damage} damage!`;
+  return {
+    timestamp: battle.elapsedTime,
+    message: `${monster.nickname} ${isCrit ? 'CRITS' : 'attacks'} ${target.nickname} for ${damage} damage!`,
+    actorTeam: monster.team,
+    isCrit,
+  };
 }
 
-export function processAbility(monster: BattleMonster, battle: BattleState, abilityIndex: number, timestamp: number): string | null {
+export function processAbility(monster: BattleMonster, battle: BattleState, abilityIndex: number, timestamp: number): BattleLogEntry | null {
   if (!monster.isAlive) return null;
-
-  // Check stun
-  if (monster.stunnedUntil && monster.stunnedUntil > timestamp) {
-    return null;
-  }
+  if (monster.stunnedUntil && monster.stunnedUntil > timestamp) return null;
 
   const ability = monster.template.abilities[abilityIndex];
 
-  if (monster.abilityDelays[abilityIndex] > 0) {
-    return null;
-  }
+  if (monster.abilityDelays[abilityIndex] > 0) return null;
+  if (monster.abilityCooldowns[abilityIndex] > 0) return null;
 
-  if (monster.abilityCooldowns[abilityIndex] > 0) {
-    return null;
-  }
-
-  // Select targets - check if ability targets allies
-  const targets = selectTargets(monster, battle, ability.targetCount, ability.targetAllies);
+  const targets = selectTargets(monster, battle, ability.targetCount, ability.targetAllies, ability.targetSelf);
   if (targets.length === 0) return null;
 
+  const preHp = targets.map(t => t.currentHp);
   monster._battle = battle;
-
   const result = ability.execute(monster, targets, battle, timestamp);
 
-  // Track damage dealt from abilities
-  if (result.damage) {
-    monster.totalDamageDealt += result.damage;
-  }
-  if (result.healing) {
-    monster.totalHealing += result.healing;
-  }
+  // Track actual HP reduction on targets
+  let totalDamageFromAbility = 0;
+  targets.forEach((target, i) => {
+    const hpDmg = Math.max(0, preHp[i] - target.currentHp);
+    if (hpDmg > 0) {
+      target.totalDamageTaken += hpDmg;
+      totalDamageFromAbility += hpDmg;
+    }
+  });
+  if (totalDamageFromAbility > 0) monster.totalDamageDealt += totalDamageFromAbility;
+  if (result.healing) monster.totalHealing += result.healing;
 
   const actualCooldown = ability.cooldown * (1 - monster.attributes.haste);
   monster.abilityCooldowns[abilityIndex] = actualCooldown;
 
-  monster.ultimateMeter = Math.min(
-    monster.template.ultimate.meterMax,
-    monster.ultimateMeter + 15 + (result.damage || 0) * 0.1
-  );
+  // Flat +15 per ability use
+  monster.ultimateMeter = Math.min(monster.template.ultimate.meterMax, monster.ultimateMeter + 15);
 
-  return result.message;
+  return {
+    timestamp: battle.elapsedTime,
+    message: `${monster.nickname} uses ${ability.name} on ${targets.map(t => t.nickname).join(', ')}! ${result.message}`,
+    actorTeam: monster.team,
+  };
 }
 
-export function processUltimate(monster: BattleMonster, battle: BattleState, timestamp: number): string | null {
+export function processUltimate(monster: BattleMonster, battle: BattleState, timestamp: number): BattleLogEntry | null {
   if (!monster.isAlive) return null;
+  if (monster.stunnedUntil && monster.stunnedUntil > timestamp) return null;
+  if (monster.ultimateMeter < monster.template.ultimate.meterMax) return null;
 
-  // Check stun
-  if (monster.stunnedUntil && monster.stunnedUntil > timestamp) {
-    return null;
-  }
-
-  if (monster.ultimateMeter < monster.template.ultimate.meterMax) {
-    return null;
-  }
-
-  const targets = selectTargets(monster, battle, monster.template.ultimate.targetCount, monster.template.ultimate.targetAllies);
+  const targets = selectTargets(monster, battle, monster.template.ultimate.targetCount, monster.template.ultimate.targetAllies, monster.template.ultimate.targetSelf);
   if (targets.length === 0) return null;
 
+  // Capture HP before to calculate actual damage dealt by the ultimate
+  const preHp = targets.map(t => t.currentHp);
+
   monster._battle = battle;
-
   const result = monster.template.ultimate.execute(monster, targets, battle, timestamp);
-
   monster.ultimateMeter = 0;
 
-  // Track damage
-  if (result.damage) {
-    monster.totalDamageDealt += result.damage;
-  }
-  if (result.healing) {
-    monster.totalHealing += result.healing;
-  }
+  // Calculate actual damage applied to targets
+  let totalUltiDamage = 0;
+  targets.forEach((target, i) => {
+    const hpDamage = Math.max(0, preHp[i] - target.currentHp);
+    totalUltiDamage += hpDamage;
+    target.totalDamageTaken += hpDamage;
+  });
 
-  // Check for kills
+  if (result.healing) monster.totalHealing += result.healing;
+  monster.totalDamageDealt += totalUltiDamage;
+
   targets.forEach(target => {
     if (target.currentHp <= 0 && target.isAlive) {
       target.isAlive = false;
       monster.kills++;
-      if (monster.template.passive.onKill) {
-        monster.template.passive.onKill(monster, target);
-      }
-      if (target.template.passive.onDeath && !target.hasRevived) {
-        target.template.passive.onDeath(target, monster);
-      }
+      triggerAllPassives(monster, 'onKill', target);
+      if (!target.hasRevived) triggerAllPassives(target, 'onDeath', monster);
     }
   });
 
-  return `*** ${monster.template.name} uses ${monster.template.ultimate.name.toUpperCase()}! ***\n${result.message}`;
+  const dmgStr = totalUltiDamage > 0 ? ` (${totalUltiDamage} total damage)` : '';
+  return {
+    timestamp: battle.elapsedTime,
+    message: `${monster.nickname} uses ${monster.template.ultimate.name.toUpperCase()}! ${result.message}${dmgStr}`,
+    actorTeam: monster.team,
+    isUltimate: true,
+  };
 }
 
 export function updateCooldowns(deltaTime: number, monster: BattleMonster): void {
@@ -379,27 +447,31 @@ export function createBattle(playerTeam: BattleMonster[], enemyTeam: BattleMonst
   const battle: BattleState = {
     playerMonsters: playerTeam,
     enemyMonsters: enemyTeam,
-    log: ['Battle begins!'],
+    log: [{ timestamp: 0, message: 'Battle begins!', actorTeam: 'player' }],
     isOver: false,
     startTime: Date.now(),
+    elapsedTime: 0,
   };
 
   playerTeam.concat(enemyTeam).forEach(m => {
-    if (m.template.passive.onApply) {
-      m.template.passive.onApply(m);
+    const allPassives = [
+      m.template.passive,
+      ...m.extraPassives,
+      ...(m.equippedItem?.specialEffect ? [m.equippedItem.specialEffect] : [])
+    ];
+    for (const passive of allPassives) {
+      if (passive.onApply) passive.onApply(m);
     }
   });
 
   return battle;
 }
 
-// Helper to apply stun with proper duration
 export function applyStun(monster: BattleMonster, durationMs: number, currentTimestamp: number): void {
   monster.stunned = true;
   monster.stunnedUntil = currentTimestamp + durationMs;
 }
 
-// Helper to apply healing
 export function applyHealing(monster: BattleMonster, amount: number): number {
   const actualHeal = Math.min(amount, monster.attributes.maxHp - monster.currentHp);
   monster.currentHp += actualHeal;

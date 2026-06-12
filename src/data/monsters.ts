@@ -1,20 +1,34 @@
-import { MonsterTemplate, BattleMonster, MonsterAttributes } from '../types/monster';
+import { MonsterTemplate, BattleMonster, MonsterAttributes, EquippableItem } from '../types/monster';
 
 // Helper to create battle monster from template
 export function createBattleMonster(
   template: MonsterTemplate,
   team: 'player' | 'enemy',
+  nickname: string = template.name,
+  mergeCount: number = 0,
+  equippedItem?: EquippableItem,
   upgrades: Partial<MonsterTemplate['baseAttributes']> = {}
 ): BattleMonster {
+  const base = template.baseAttributes;
+  const upg = upgrades as Record<string, number>;
   const attrs = {
-    ...template.baseAttributes,
-    ...upgrades,
-    maxHp: (template.baseAttributes.hp + (upgrades.hp || 0)),
+    ...base,
+    hp: base.hp + (upg.hp || 0),
+    maxHp: base.hp + (upg.hp || 0),
+    attack: base.attack + (upg.attack || 0),
+    defense: base.defense + (upg.defense || 0),
+    attackSpeed: base.attackSpeed + (upg.attackSpeed || 0),
+    critChance: base.critChance + (upg.critChance || 0),
+    critDamage: base.critDamage + (upg.critDamage || 0),
+    dodgeChance: base.dodgeChance + (upg.dodgeChance || 0),
+    damageReduction: base.damageReduction + (upg.damageReduction || 0),
+    penetration: base.penetration + (upg.penetration || 0),
+    haste: base.haste + (upg.haste || 0),
   };
-  attrs.hp = attrs.maxHp;
 
   return {
     id: `${template.id}-${team}-${Math.random().toString(36).substr(2, 9)}`,
+    nickname,
     template,
     attributes: attrs as MonsterAttributes,
     currentHp: attrs.maxHp,
@@ -24,6 +38,9 @@ export function createBattleMonster(
     isAlive: true,
     team,
     lastAttackTime: 0,
+    mergeCount,
+    equippedItem,
+    extraPassives: [],
     totalDamageDealt: 0,
     totalDamageTaken: 0,
     totalHealing: 0,
@@ -362,6 +379,7 @@ export const IRON_KNIGHT: MonsterTemplate = {
     description: 'Becomes immune to damage for 3s and reflects 50% of attempted damage',
     meterMax: 100,
     targetCount: 0,
+    targetSelf: true,
     execute: (self) => {
       self.damageImmune = true;
       self.reflectDamage = 0.5;
@@ -1088,6 +1106,7 @@ export const PHOENIX_LORD: MonsterTemplate = {
       cooldown: 10,
       initialDelay: 5,
       targetCount: 0,
+      targetSelf: true,
       execute: (self) => {
         const healing = Math.floor(self.attributes.maxHp * 0.25);
         self.currentHp = Math.min(self.attributes.maxHp, self.currentHp + healing);
@@ -1167,11 +1186,12 @@ export const CRYSTAL_GOLEM: MonsterTemplate = {
       cooldown: 12,
       initialDelay: 5,
       targetCount: 0,
+      targetSelf: true,
       execute: (self) => {
         const shieldAmount = Math.floor(self.attributes.maxHp * 2);
         self.shield = shieldAmount;
         setTimeout(() => { if (self.isAlive) self.shield = 0; }, 4000);
-        return { message: `Diamond Shield activated!` };
+        return { shield: shieldAmount, message: `Diamond Shield activated!` };
       },
     },
   ],
